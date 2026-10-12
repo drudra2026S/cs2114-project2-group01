@@ -34,10 +34,10 @@ To run the tests execute the corresponding test and download the library used in
 
 ### What Changed from the Specification?
 
-• Time & Mission Rules: The game sets a strict 100-hour Earth timeline. Mission base time is simplified to 5 hours for 1–3 resources, and 10 hours for 4 or more resources.
-• Time Dilation: Planet environments use a custom scale factor to accurately turn local mission hours back into passing Earth time.
-• Win Conditions: Instead of collecting a random number of items, you must clear every single mission in the galaxy and fly back to Earth before time hits zero.
-• Code Responsibilities: System tasks are split cleanly. Mission and Event hold the game states, WorldBuild generates the seeded map, and Main runs the actual gameplay loop and menus.
+- Time & Mission Rules: The game sets a strict 100-hour Earth timeline. Mission base time is simplified to 5 hours for 1–3 resources, and 10 hours for 4 or more resources.
+- Time Dilation: Planet environments use a custom scale factor to accurately turn local mission hours back into passing Earth time.
+- Win Conditions: Instead of collecting a random number of items, you must clear every single mission in the galaxy and fly back to Earth before time hits zero.
+- Code Responsibilities: System tasks are split cleanly. Mission and Event hold the game states, WorldBuild generates the seeded map, and Main runs the actual gameplay loop and menus.
 
 ### What Changed in LinkedChain?
 
@@ -91,10 +91,10 @@ Planned test coverage includes:
 
 For the stretch goals this is what is needed from each individual 
 
-• Ami: Implementing additional planets, mapping the expanded network connections, and writing the new planet generation validation tests.
-• Luke: Creating the core difficulty level selection parameters, adjusting the event probability logic, and writing the difficulty modifier unit tests.
-• Rudra: Updating the Mission and Event classes to handle scaled reward or damage values across different difficulties.
-• Zachary: Updating the menu selection interface in Main to allow players to set difficulty and view expanded planet pathways.
+- Ami: Implementing additional planets, mapping the expanded network connections, and writing the new planet generation validation tests.
+- Luke: Creating the core difficulty level selection parameters, adjusting the event probability logic, and writing the difficulty modifier unit tests.
+- Rudra: Updating the Mission and Event classes to handle scaled reward or damage values across different difficulties.
+- Zachary: Updating the menu selection interface in Main to allow players to set difficulty and view expanded planet pathways.
 
 ## Attribution
 
