@@ -68,12 +68,12 @@ We plan to complete the prototype and then extend it toward the final version of
 ### Remaining MVP Work
 
 1. **Implement time management.** Track the remaining Earth time and apply the planet's time-dilation factor to mission and travel time.
-2. **Implement the win/loss conditions.** Decide the required materials, implement the return-to-Earth requirement if the group keeps it, and determine what happens when time runs out or the spaceship can no longer continue.
+2. **Implement the win/loss conditions.** Decide the required materials, implement the return-to-Earth requirement if we keeps it, and determine what happens when time runs out or the spaceship can no longer continue.
 3. **Test and debug.** Run all tests, fix failures, and verify the complete MVP path.
 
 ### Stretch Goals
 
-The group needs to confirm which stretch goals from the original scope it will attempt.
+we needs to confirm which stretch goals from the original scope it will attempt.
 
 - **Committed:** Additional planets with more unique missions, Difficulty levels that can change travel-event probabilities, time costs, and rewards
 - **Dropped:** More varied random events with different consequences and recovery options, Randomized mission events, so each playerthough is different and not repetitive 
@@ -98,7 +98,7 @@ For the stretch goals this is what is needed from each individual
 
 ## Attribution
 
-The table below records the current understanding of who worked on each file. The group should review it and correct or complete the entries before submission.
+The table below records the current understanding of who worked on each file. we should review it and correct or complete the entries before submission.
 
 | File | Contributor(s) | Contribution |
 |---|---|---|
