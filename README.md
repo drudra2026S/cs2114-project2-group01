@@ -73,9 +73,9 @@ We plan to complete the prototype and then extend it toward the final version of
 
 ### Stretch Goals
 
-we needs to confirm which stretch goals from the original scope it will attempt.
+We needs to confirm which stretch goals from the original scope it will attempt.
 
-- **Committed:** Additional planets with more unique missions, Difficulty levels that can change travel-event probabilities, time costs, and rewards
+- **Committed:** Additional planets with more unique missions, Difficulty levels that can change travel-event probabilities, time costs, and rewards (completed)
 - **Dropped:** More varied random events with different consequences and recovery options, Randomized mission events, so each playerthough is different and not repetitive 
 - **Undecided:** Multiple routes through solar system, so players can choose between a safe path or a higher difficult path with greater rewards
 
@@ -98,7 +98,7 @@ For the stretch goals this is what is needed from each individual
 
 ## Attribution
 
-The table below records the current understanding of who worked on each file. we should review it and correct or complete the entries before submission.
+The table below records the current understanding of who worked on each file. 
 
 | File | Contributor(s) | Contribution |
 |---|---|---|
