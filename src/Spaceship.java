@@ -70,7 +70,39 @@ public class Spaceship
         engineWorking = true;
         timeLeft = START_TIME;
     }
+    
+    // ----------------------------------------------------------
+    /**
+     * Create a new Spaceship object.
+     * @param start planet
+     * @param world of the one you are on
+     * @param startingTime time you start with
+     */
+    public Spaceship(
+        Planet start,
+        WorldBuild world,
+        Duration startingTime)
+    {
+        if (start == null)
+        {
+            throw new IllegalArgumentException(
+                "Starting planet cannot be null.");
+        }
 
+        if (startingTime == null || startingTime.isNegative()
+            || startingTime.isZero())
+        {
+            throw new IllegalArgumentException(
+                "Starting time must be positive.");
+        }
+
+        currentLocation = start;
+        this.world = world;
+        health = MAX_HEALTH;
+        totalDamage = 0;
+        engineWorking = true;
+        timeLeft = startingTime;
+    }
 
     // ----------------------------------------------------------
     /**

@@ -170,24 +170,79 @@ public class MissionTest extends TestCase
     /**
      * Tests the default mission duration.
      */
-    public void testMissionTimeDefault()
+ // ----------------------------------------------------------
+    /**
+     * Tests that Easy missions take three hours.
+     */
+    public void testMissionTimeEasy()
     {
         assertEquals(
-            Duration.ofHours(5), mission.MissionTime());
+            Duration.ofHours(3),
+            mission.missionTime(Difficulty.EASY));
     }
 
     // ----------------------------------------------------------
     /**
-     * Tests the duration for four or more resources.
+     * Tests that Demo missions take one hour.
      */
-    public void testMissionTimeManyResources()
+    public void testMissionTimeDemo()
+    {
+        assertEquals(
+            Duration.ofHours(1),
+            mission.missionTime(Difficulty.DEMO));
+    }
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that Normal missions with one resource take five hours.
+     */
+    public void testMissionTimeNormal()
+    {
+        assertEquals(
+            Duration.ofHours(5),
+            mission.missionTime(Difficulty.NORMAL));
+    }
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that Normal missions with four resources take ten hours.
+     */
+    public void testMissionTimeNormalManyResources()
     {
         Mission largeMission = new Mission(
             "Collect Samples", "Research Samples", 100, 4);
 
         assertEquals(
-            Duration.ofHours(10), largeMission.MissionTime());
+            Duration.ofHours(10),
+            largeMission.missionTime(Difficulty.NORMAL));
     }
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that Hard missions with one resource take seven hours.
+     */
+    public void testMissionTimeHard()
+    {
+        assertEquals(
+            Duration.ofHours(7),
+            mission.missionTime(Difficulty.HARD));
+    }
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that Hard missions with four resources take twelve hours.
+     */
+    public void testMissionTimeHardManyResources()
+    {
+        Mission largeMission = new Mission(
+            "Collect Samples", "Research Samples", 100, 4);
+
+        assertEquals(
+            Duration.ofHours(12),
+            largeMission.missionTime(Difficulty.HARD));
+    }
+
+    // ---------------------------------------------------------
 
     // ----------------------------------------------------------
     /**
@@ -199,8 +254,7 @@ public class MissionTest extends TestCase
 
         try
         {
-            new Mission(
-                "Collect Fuel", "Fuel Cell", 100, 0);
+            mission = new Mission("Collect Fuel", "Fuel Cell", 100, 0);
         }
         catch (IllegalArgumentException e)
         {

@@ -120,11 +120,31 @@ public class Mission
     // ----------------------------------------------------------
     /**
      * Gets the local time required to complete the mission.
+     * @param difficulty of the game with time
      *
      * @return the mission duration in local hours
      */
-    public Duration MissionTime()
+    public Duration missionTime(Difficulty difficulty)
     {
+        if (difficulty == Difficulty.DEMO)
+        {
+            return Duration.ofHours(1);
+        }
+        if (difficulty == Difficulty.EASY)
+        {
+            return Duration.ofHours(3);
+        }
+
+        if (difficulty == Difficulty.HARD)
+        {
+            if (resourceCount <= 3)
+            {
+                return Duration.ofHours(7);
+            }
+
+            return Duration.ofHours(12);
+        }
+
         if (resourceCount <= 3)
         {
             return Duration.ofHours(5);

@@ -1,183 +1,236 @@
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 // -------------------------------------------------------------------------
+
 /**
- *  Write a one-sentence summary of your class here.
- *  Follow it with additional details about its purpose, what abstraction
- *  it represents, and how to use it.
- * 
- *  @author zach1
- *  @version Oct 9, 2026
+ * Test class for Main testing all possibilities.
+ *
+ * @author zach1
+ * @version Oct 12, 2026
  */
 public class MainTest
 {
-    // ----------------------------------------------------------
+    private InputStream originalIn;
+    private PrintStream originalOut;
+    private ByteArrayOutputStream output;
+
     /**
-     * Place a description of your method here.
+     * Sets up console input and output for each test.
+     */
+    @BeforeEach
+    public void setUp()
+    {
+        originalIn = System.in;
+        originalOut = System.out;
+        output = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(output));
+    }
+
+    /**
+     * Restores the original console input and output.
+     */
+    @AfterEach
+    public void tearDown()
+    {
+        System.setIn(originalIn);
+        System.setOut(originalOut);
+    }
+
+    /**
+     * Creates a game with the supplied simulated console input.
+     *
+     * @param input
+     *            the input the game should receive
+     * @return a new Main game
+     */
+    private Main createGame(String input)
+    {
+        String completeInput = "2\n" + input;
+
+        System.setIn(new ByteArrayInputStream(
+            completeInput.getBytes(StandardCharsets.UTF_8)));
+
+        return new Main();
+    }
+
+    /**
+     * Tests that an invalid menu choice displays an error.
      */
     @Test
     public void testInvalidMenuChoice()
     {
-        Main game = new Main();
+        Main game = createGame("");
 
-        PrintStream originalOut = System.out;
-        ByteArrayOutputStream output =
-            new ByteArrayOutputStream();
-
-        System.setOut(new PrintStream(output));
-
-        game.handleChoice(7);
-
-        System.setOut(originalOut);
-
-        assertTrue(output.toString().contains(
-            "Invalid choice. Try again."));
+        assertTrue(game.handleChoice(99));
+        assertTrue(output.toString().contains("Invalid choice"));
     }
-    
-    // ----------------------------------------------------------
+
     /**
-     * Place a description of your method here.
+     * Tests that starting a mission begins the travel process.
      */
     @Test
     public void testStartMissionChoice()
     {
-        Main game = new Main();
+        Main game = createGame("0\n");
 
-        PrintStream originalOut = System.out;
-        ByteArrayOutputStream output =
-            new ByteArrayOutputStream();
-
-        System.setOut(new PrintStream(output));
-
-        try
-        {
-            game.handleChoice(1);
-        }
-        finally
-        {
-            System.setOut(originalOut);
-        }
-
+        assertTrue(game.handleChoice(1));
         assertTrue(output.toString().contains(
-            "Starting your mission..."));
+            "Continuing your expedition"));
     }
 
-    // ----------------------------------------------------------
     /**
-     * Place a description of your method here.
+     * Tests that viewing the status displays ship information.
      */
     @Test
     public void testViewStatusChoice()
     {
-        Main game = new Main();
+        Main game = createGame("");
 
-        PrintStream originalOut = System.out;
-        ByteArrayOutputStream output =
-            new ByteArrayOutputStream();
-
-        System.setOut(new PrintStream(output));
-
-        try
-        {
-            game.handleChoice(2);
-        }
-        finally
-        {
-            System.setOut(originalOut);
-        }
-
+        assertTrue(game.handleChoice(2));
         assertTrue(output.toString().contains(
             "===== SHIP STATUS ====="));
-
-        assertTrue(output.toString().contains(
-            "Ship status is not available yet."));
+        assertTrue(output.toString().contains("Health:"));
     }
 
-    // ----------------------------------------------------------
     /**
-     * Place a description of your method here.
+     * Tests that choosing quit ends the game.
      */
     @Test
     public void testQuitChoice()
     {
-        Main game = new Main();
+        Main game = createGame("");
 
-        assertFalse(game.handleChoice(3));
+        assertFalse(game.handleChoice(5));
     }
 
-    // ----------------------------------------------------------
     /**
-     * Place a description of your method here.
+     * Tests that an invalid choice does not end the game.
      */
     @Test
     public void testInvalidChoiceContinuesGame()
     {
-        Main game = new Main();
+        Main game = createGame("");
 
-        assertTrue(game.handleChoice(7));
+        assertTrue(game.handleChoice(99));
     }
 
-    // ----------------------------------------------------------
     /**
-     * Place a description of your method here.
+     * Tests that starting a mission keeps the game running.
      */
     @Test
     public void testStartMissionContinuesGame()
     {
-        Main game = new Main();
+        Main game = createGame("0\n");
 
         assertTrue(game.handleChoice(1));
     }
 
-    // ----------------------------------------------------------
     /**
-     * Place a description of your method here.
+     * Tests that viewing ship status keeps the game running.
      */
     @Test
     public void testViewStatusContinuesGame()
     {
-        Main game = new Main();
+        Main game = createGame("");
 
         assertTrue(game.handleChoice(2));
     }
-    
-    // ----------------------------------------------------------
+
     /**
-     * Place a description of your method here.
+     * Tests that the menu displays all five options.
      */
     @Test
     public void testMenuDisplaysAllOptions()
     {
-        java.io.InputStream originalIn = System.in;
-        PrintStream originalOut = System.out;
+        Main game = createGame("5\n");
+        game.startGame();
 
-        ByteArrayOutputStream output =
-            new ByteArrayOutputStream();
+        assertTrue(output.toString().contains(
+            "1. Travel to another planet"));
+        assertTrue(output.toString().contains("2. View status"));
+        assertTrue(output.toString().contains(
+            "3. View current missions"));
+        assertTrue(output.toString().contains(
+            "4. Repair ship / fix engine"));
+        assertTrue(output.toString().contains("5. Quit"));
+    }
 
-        System.setIn(new java.io.ByteArrayInputStream(
-            "3\n".getBytes()));
+    /**
+     * Tests that nonnumeric input is handled without crashing.
+     */
+    @Test
+    public void testNonNumberInput()
+    {
+        Main game = createGame("hello\n5\n");
+        game.startGame();
 
-        System.setOut(new PrintStream(output));
+        assertTrue(output.toString().contains(
+            "Please enter a number"));
+    }
 
-        try
-        {
-            Main game = new Main();
-            game.startGame();
-        }
-        finally
-        {
-            System.setIn(originalIn);
-            System.setOut(originalOut);
-        }
+    /**
+     * Tests that the game has not been won at the start.
+     */
+    @Test
+    public void testCheckWinInitiallyFalse()
+    {
+        Main game = createGame("");
 
-        String result = output.toString();
+        assertFalse(game.checkWin());
+    }
 
-        assertTrue(result.contains("1. Start mission"));
-        assertTrue(result.contains("2. View status"));
-        assertTrue(result.contains("3. Quit"));
-        assertTrue(result.contains("Thanks for playing!"));
+    /**
+     * Tests that the game has not been lost at the start.
+     */
+    @Test
+    public void testCheckLossInitiallyFalse()
+    {
+        Main game = createGame("");
+
+        assertFalse(game.checkLoss());
+    }
+
+    /**
+     * Tests that viewing current missions keeps the game running.
+     */
+    @Test
+    public void testViewMissionsChoice()
+    {
+        Main game = createGame("");
+
+        assertTrue(game.handleChoice(3));
+    }
+
+    /**
+     * Tests that repairing the ship keeps the game running.
+     */
+    @Test
+    public void testRepairShipChoice()
+    {
+        Main game = createGame("");
+
+        assertTrue(game.handleChoice(4));
+    }
+
+    /**
+     * Tests that a negative menu choice does not end the game.
+     */
+    @Test
+    public void testNegativeMenuChoice()
+    {
+        Main game = createGame("");
+
+        assertTrue(game.handleChoice(-1));
+        assertTrue(output.toString().contains("Invalid choice"));
     }
 }
