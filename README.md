@@ -34,11 +34,11 @@ To run the tests execute the corresponding test and download the library used in
 
 ### What Changed from the Specification?
 
-- Time & Mission Rules: The game sets a strict 100-hour Earth timeline. Mission base time is simplified to 5 hours for 1–3 resources, and 10 hours for 4 or more resources.
-- Time Dilation: Planet environments use a custom scale factor to accurately turn local mission hours back into passing Earth time.
-- Win Conditions: Instead of collecting a random number of items, you must clear every single mission in the galaxy and fly back to Earth before time hits zero.
-- Code Responsibilities: System tasks are split cleanly. Mission and Event hold the game states, WorldBuild generates the seeded map, and Main runs the actual gameplay loop and menus.
-
+- Time and Mission Rules: The game starts with 100 hours of Earth time in the regular difficulties. Mission time costs depend on difficulty and the number of resources required.
+- Time Dilation: Planets use different time-dilation factors to represent differences between local time and Earth time.
+- Win Conditions: The player must complete every mission and return to Earth before running out of time.
+- Difficulty Levels: Easy, Normal, Hard, and Demo modes change gameplay. Demo mode provides additional starting time and reduces the effects of certain random events.
+- Code Responsibilities: Mission manages mission information and completion, Event handles random events and their effects, WorldBuild generates the planets and missions, and Main manages menus and gameplay.
 ### What Changed in LinkedChain?
 
 The project was given a `LinkedChain.java` implementation, so the goal is to reuse the provided generic data structure instead of building a new one.
