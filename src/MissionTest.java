@@ -6,8 +6,8 @@ import student.TestCase;
 /**
  * Tests the Mission class.
  *
- * @author Rudra
- * @version Oct 2026
+ * @author Rudra Dutta (drudra)
+ * @version 2026.10.11
  */
 public class MissionTest extends TestCase
 {
