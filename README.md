@@ -119,4 +119,4 @@ The table below records the current understanding of who worked on each file. Th
 
 ### GenAI Note
 
-GenAI was used to help define logic that all the classes share. GenAI helped to assist what the win condition should be, including the amount of time Earth should have and how time dilation should work. GenAI was also used to find inconsistencies between classes which caused error. 
+GenAI was used to help define logic that all the classes share. GenAI helped to assist what the win condition should be, including the amount of time Earth should have and how time dilation should work. GenAI was also used to find inconsistencies between classes which caused error. GenAI was used for generating planet names, mission types, and resources collected.
