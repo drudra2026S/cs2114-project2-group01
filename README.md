@@ -105,7 +105,7 @@ The table below records the current understanding of who worked on each file. Th
 | `Main.java` | Zachary | Wrote the initial menu and program structure |
 | `MainTest.java` | Zachary | Wrote the test class for Main |
 | `Mission.java` | Rudra | Wrote the Mission Class |
-| `MissionTest.java` | Rudra] | Created the test class for Mission |
+| `MissionTest.java` | Rudra | Created the test class for Mission |
 | `Event.java` | Rudra | Wrote the Random event class for the project |
 | `EventTest.java` | Rudra | Created the testing class for Event |
 | `Planet.java` | Ami | Created the Planet class |
