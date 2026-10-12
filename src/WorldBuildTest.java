@@ -376,4 +376,108 @@ public class WorldBuildTest
                 && others <= WorldBuild.MAX_PLANETS);
         assertNotNull(random.getRandomEvent());
     }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that Earth is the head of the map and the map holds every planet.
+     */
+    @Test
+    public void testMapHeadIsEarth()
+    {
+        FourWayLink<Planet> map = world.getMap();
+        assertSame(world.getEarth(), map.head().value);
+        assertSame(map.head(), world.getNode(world.getEarth()));
+        assertEquals(world.getPlanetCount(), map.size());
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that every map link goes both ways: if B is in direction d from A,
+     * then A is in the opposite direction from B.
+     */
+    @Test
+    public void testLinksGoBothWays()
+    {
+        for (long seed = 0; seed < 50; seed++)
+        {
+            WorldBuild w = new WorldBuild(seed);
+
+            for (Planet p : w.getPlanets())
+            {
+                FourWayLink.Node<Planet> node = w.getNode(p);
+
+                for (FourWayLink.Direction d : FourWayLink.Direction.values())
+                {
+                    FourWayLink.Node<Planet> next = node.get(d);
+
+                    if (next != null)
+                    {
+                        assertSame(node, next.get(d.opposite()));
+                    }
+                }
+            }
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Tests that the map is a tree: links = planets - 1, and no planet has more
+     * than 4 routes.
+     */
+    @Test
+    public void testMapIsTree()
+    {
+        for (long seed = 0; seed < 50; seed++)
+        {
+            WorldBuild w = new WorldBuild(seed);
+            int links = 0;
+
+            for (Planet p : w.getPlanets())
+            {
+                int routes = w.getConnectedPlanets(p).length;
+                assertTrue(routes >= 1 && routes <= 4);
+                links += routes;
+            }
+
+            assertEquals(w.getPlanetCount() - 1, links / 2);
+        }
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Tests getNeighbor and getDirection agree with each other.
+     */
+    @Test
+    public void testNeighborAndDirection()
+    {
+        Planet earth = world.getEarth();
+        Planet next = world.getConnectedPlanets(earth)[0];
+        FourWayLink.Direction d = world.getDirection(earth, next);
+
+        assertNotNull(d);
+        assertSame(next, world.getNeighbor(earth, d));
+        assertSame(earth, world.getNeighbor(next, d.opposite()));
+        assertEquals(d.opposite(), world.getDirection(next, earth));
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Tests neighbor lookups with bad input.
+     */
+    @Test
+    public void testNeighborBadInput()
+    {
+        Planet pluto = new Planet("Pluto", 1.0);
+        assertNull(world.getNeighbor(pluto, FourWayLink.Direction.UP));
+        assertNull(world.getNeighbor(world.getEarth(), null));
+        assertNull(world.getDirection(world.getEarth(), null));
+        assertNull(world.getDirection(world.getEarth(), pluto));
+        assertNull(world.getNode(pluto));
+        assertNull(world.getNode(null));
+    }
 }

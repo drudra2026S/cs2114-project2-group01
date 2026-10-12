@@ -2,18 +2,19 @@ import java.util.Random;
 
 // -------------------------------------------------------------------------
 /**
- * Creates and stores the game world: the planets, the missions on each planet,
- * which planets connect to each other, and the pool of random events used
- * during travel. Every run builds a different world. Earth is always the start
- * and finish, and 5 to 8 other planets are picked at random from a catalog of
- * 14. Each picked planet gets a slightly randomized time dilation, 1 or 2
- * random missions, and a random set of routes. The routes always form a loop
- * through every planet (so every planet is reachable and there is always a way
- * back to Earth), plus a few random shortcuts. WorldBuild(long seed) builds the
- * same world every time for a given seed, so tests are repeatable. Everything
- * is stored in FourWayLink chains, linked left to right. Because Planet does
- * not store its own missions or connections, each planet is wrapped in a
- * PlanetEntry that holds them.
+ * Creates and stores the game world: a map of planets, the missions on each
+ * planet, and the pool of random events used during travel. The map is a
+ * FourWayLink<Planet>. Each planet is a node, and its UP, DOWN, LEFT and RIGHT
+ * links are the routes a ship can fly. Earth is the root (the head) of the map.
+ * Every run builds a different map. Earth plus 5 to 8 planets are picked from a
+ * catalog of 14, and the map grows outward from Earth: each new planet is
+ * attached to a random planet already on the map, in a random open direction.
+ * Every planet also has an (x, y) grid position, and no two planets share a
+ * position, so Main can draw the map as a grid. Because FourWayLink can only
+ * attach a NEW node to an existing one, the map is a tree: there is exactly one
+ * path between any two planets, and every route works both ways, so there is
+ * always a way back to Earth. WorldBuild(long seed) builds the same world every
+ * time for a given seed, so tests are repeatable.
  *
  * @author ltstabler
  * @version Oct 12, 2026
@@ -54,25 +55,29 @@ public class WorldBuild
 
     // -------------------------------------------------------------------------
     /**
-     * A planet plus the missions on it and the planets it connects to.
+     *  One planet on the map: its node in the map, its grid
+     * position, and its missions.
      */
-    private static class PlanetEntry
+    private static class Slot
     {
-        private Planet planet;
+        private FourWayLink.Node<Planet> node;
+        private int x;
+        private int y;
         private FourWayLink<Mission> missions;
-        private FourWayLink<Planet> connections;
 
-        private PlanetEntry(Planet planet)
+        private Slot(FourWayLink.Node<Planet> node, int x, int y)
         {
-            this.planet = planet;
+            this.node = node;
+            this.x = x;
+            this.y = y;
             missions = new FourWayLink<>();
-            connections = new FourWayLink<>();
         }
     }
 
-    private FourWayLink<PlanetEntry> planets;
+    private FourWayLink<Planet> map;
+    private Slot[] slots;
+    private int slotCount;
     private FourWayLink<Event> eventPool;
-    private Planet earth;
     private Random random;
 
     // ----------------------------------------------------------
@@ -88,32 +93,34 @@ public class WorldBuild
     // ----------------------------------------------------------
     /**
      * Creates the game world using the given seed. The same seed always builds
-     * the same planets, missions, routes, and random events.
+     * the same map, missions, and random events.
      *
      * @param seed
      *            the seed for random choices
      */
     public WorldBuild(long seed)
     {
-        planets = new FourWayLink<>();
+        map = new FourWayLink<>();
+        slots = new Slot[MAX_PLANETS + 1];
+        slotCount = 0;
         eventPool = new FourWayLink<>();
         random = new Random(seed);
 
         createPlanets();
-        connectPlanets();
         createEventPool();
     }
 
 
     // ----------------------------------------------------------
     /**
-     * Adds Earth, then picks 5 to 8 random planets from the catalog and gives
-     * each one 1 or 2 random missions.
+     * Puts Earth at (0, 0) as the root of the map, then attaches 5 to 8 random
+     * planets one at a time, each with 1 or 2 random missions.
      */
     private void createPlanets()
     {
-        earth = new Planet("Earth", 1.0);
-        addPlanet(earth);
+        Planet earth = new Planet("Earth", 1.0);
+        slots[0] = new Slot(map.addRoot(earth), 0, 0);
+        slotCount = 1;
 
         int[] planetOrder = shuffledIndexes(PLANET_NAMES.length);
         int[] missionOrder = shuffledIndexes(MISSION_OBJECTIVES.length);
@@ -127,7 +134,7 @@ public class WorldBuild
             Planet planet = new Planet(
                 PLANET_NAMES[p],
                 randomDilation(PLANET_DILATIONS[p]));
-            addPlanet(planet);
+            Slot slot = attachPlanet(planet);
 
             int missionCount = 1 + random.nextInt(2);
 
@@ -135,7 +142,7 @@ public class WorldBuild
             {
                 int m = missionOrder[nextMission % missionOrder.length];
                 nextMission++;
-                addMission(planet, randomMission(m));
+                addToEnd(slot.missions, randomMission(m));
             }
         }
     }
@@ -143,44 +150,31 @@ public class WorldBuild
 
     // ----------------------------------------------------------
     /**
-     * Builds the routes. First a loop through every planet in random order,
-     * starting and ending at Earth, so everything is reachable. Then 1 to 3
-     * random shortcuts between planets.
+     * Attaches a planet to a random planet already on the map, in a random
+     * direction whose link is empty and whose grid spot is free.
+     *
+     * @param planet
+     *            the planet to attach
+     * @return the new planet's slot
      */
-    private void connectPlanets()
+    private Slot attachPlanet(Planet planet)
     {
-        Planet[] all = getPlanets();
-        int others = all.length - 1;
+        FourWayLink.Direction[] dirs = FourWayLink.Direction.values();
 
-        // Random loop: Earth -> others in shuffled order -> Earth
-        int[] order = shuffledIndexes(others);
-        Planet previous = earth;
-
-        for (int i = 0; i < others; i++)
+        while (true)
         {
-            Planet next = all[order[i] + 1];
-            connect(previous, next);
-            previous = next;
-        }
+            Slot from = slots[random.nextInt(slotCount)];
+            FourWayLink.Direction d = dirs[random.nextInt(dirs.length)];
+            int x = from.x + dx(d);
+            int y = from.y + dy(d);
 
-        connect(previous, earth);
-
-        // Random shortcuts. Pairs that are already connected don't count,
-        // so keep trying (with a limit, in case the map is nearly full).
-        int shortcuts = 1 + random.nextInt(3);
-        int added = 0;
-        int attempts = 0;
-
-        while (added < shortcuts && attempts < 50)
-        {
-            Planet a = all[random.nextInt(all.length)];
-            Planet b = all[random.nextInt(all.length)];
-            attempts++;
-
-            if (a != b && !isConnected(a, b))
+            if (from.node.get(d) == null && findSlotAt(x, y) == null)
             {
-                connect(a, b);
-                added++;
+                FourWayLink.Node<Planet> node = map.add(from.node, d, planet);
+                Slot slot = new Slot(node, x, y);
+                slots[slotCount] = slot;
+                slotCount++;
+                return slot;
             }
         }
     }
@@ -203,13 +197,42 @@ public class WorldBuild
 
     // ----------------------------------------------------------
     /**
-     * Gets Earth, the start and finish planet.
+     * Gets Earth, the start and finish planet (the head of the map).
      *
      * @return Earth
      */
     public Planet getEarth()
     {
-        return earth;
+        return map.head().value;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the map itself. Each node's UP, DOWN, LEFT and RIGHT links are the
+     * routes from that planet.
+     *
+     * @return the map of planets
+     */
+    public FourWayLink<Planet> getMap()
+    {
+        return map;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the map node holding a planet, so callers can use get(Direction) to
+     * look at its neighbors.
+     *
+     * @param planet
+     *            the planet
+     * @return its node, or null if the planet isn't on the map
+     */
+    public FourWayLink.Node<Planet> getNode(Planet planet)
+    {
+        Slot slot = findSlot(planet);
+        return slot == null ? null : slot.node;
     }
 
 
@@ -221,14 +244,11 @@ public class WorldBuild
      */
     public Planet[] getPlanets()
     {
-        Planet[] result = new Planet[planets.size()];
-        int i = 0;
+        Planet[] result = new Planet[slotCount];
 
-        for (FourWayLink.Node<PlanetEntry> node =
-            planets.head(); node != null; node = node.right)
+        for (int i = 0; i < slotCount; i++)
         {
-            result[i] = node.value.planet;
-            i++;
+            result[i] = slots[i].node.value;
         }
 
         return result;
@@ -243,7 +263,7 @@ public class WorldBuild
      */
     public int getPlanetCount()
     {
-        return planets.size();
+        return map.size();
     }
 
 
@@ -262,12 +282,13 @@ public class WorldBuild
             return null;
         }
 
-        for (FourWayLink.Node<PlanetEntry> node =
-            planets.head(); node != null; node = node.right)
+        for (int i = 0; i < slotCount; i++)
         {
-            if (node.value.planet.getName().equalsIgnoreCase(name.trim()))
+            Planet p = slots[i].node.value;
+
+            if (p.getName().equalsIgnoreCase(name.trim()))
             {
-                return node.value.planet;
+                return p;
             }
         }
 
@@ -285,18 +306,18 @@ public class WorldBuild
      */
     public Mission[] getMissions(Planet planet)
     {
-        PlanetEntry entry = findEntry(planet);
+        Slot slot = findSlot(planet);
 
-        if (entry == null)
+        if (slot == null)
         {
             return new Mission[0];
         }
 
-        Mission[] result = new Mission[entry.missions.size()];
+        Mission[] result = new Mission[slot.missions.size()];
         int i = 0;
 
         for (FourWayLink.Node<Mission> node =
-            entry.missions.head(); node != null; node = node.right)
+            slot.missions.head(); node != null; node = node.right)
         {
             result[i] = node.value;
             i++;
@@ -308,7 +329,31 @@ public class WorldBuild
 
     // ----------------------------------------------------------
     /**
-     * Gets the planets that can be traveled to from a planet.
+     * Gets the planet in a direction from a planet.
+     *
+     * @param planet
+     *            the starting planet
+     * @param d
+     *            the direction to look
+     * @return the neighboring planet, or null if there is no route that way
+     */
+    public Planet getNeighbor(Planet planet, FourWayLink.Direction d)
+    {
+        Slot slot = findSlot(planet);
+
+        if (slot == null || d == null || slot.node.get(d) == null)
+        {
+            return null;
+        }
+
+        return slot.node.get(d).value;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the planets that can be traveled to from a planet, checking UP,
+     * DOWN, LEFT and RIGHT in that order.
      *
      * @param planet
      *            the planet
@@ -316,24 +361,58 @@ public class WorldBuild
      */
     public Planet[] getConnectedPlanets(Planet planet)
     {
-        PlanetEntry entry = findEntry(planet);
+        FourWayLink.Direction[] dirs = FourWayLink.Direction.values();
+        Planet[] found = new Planet[dirs.length];
+        int count = 0;
 
-        if (entry == null)
+        for (FourWayLink.Direction d : dirs)
         {
-            return new Planet[0];
+            Planet neighbor = getNeighbor(planet, d);
+
+            if (neighbor != null)
+            {
+                found[count] = neighbor;
+                count++;
+            }
         }
 
-        Planet[] result = new Planet[entry.connections.size()];
-        int i = 0;
+        Planet[] result = new Planet[count];
 
-        for (FourWayLink.Node<Planet> node =
-            entry.connections.head(); node != null; node = node.right)
+        for (int i = 0; i < count; i++)
         {
-            result[i] = node.value;
-            i++;
+            result[i] = found[i];
         }
 
         return result;
+    }
+
+
+    // ----------------------------------------------------------
+    /**
+     * Gets the direction to fly to get from one planet to a neighbor.
+     *
+     * @param from
+     *            the starting planet
+     * @param to
+     *            the destination planet
+     * @return the direction, or null if the planets aren't connected
+     */
+    public FourWayLink.Direction getDirection(Planet from, Planet to)
+    {
+        if (to == null)
+        {
+            return null;
+        }
+
+        for (FourWayLink.Direction d : FourWayLink.Direction.values())
+        {
+            if (getNeighbor(from, d) == to)
+            {
+                return d;
+            }
+        }
+
+        return null;
     }
 
 
@@ -345,27 +424,11 @@ public class WorldBuild
      *            the starting planet
      * @param to
      *            the destination planet
-     * @return true if the planets are connected
+     * @return true if the planets are linked on the map
      */
     public boolean isConnected(Planet from, Planet to)
     {
-        PlanetEntry entry = findEntry(from);
-
-        if (entry == null || to == null)
-        {
-            return false;
-        }
-
-        for (FourWayLink.Node<Planet> node =
-            entry.connections.head(); node != null; node = node.right)
-        {
-            if (node.value == to)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return getDirection(from, to) != null;
     }
 
 
@@ -456,11 +519,10 @@ public class WorldBuild
     {
         int count = 0;
 
-        for (FourWayLink.Node<PlanetEntry> p = planets.head(); p != null; p =
-            p.right)
+        for (int i = 0; i < slotCount; i++)
         {
             for (FourWayLink.Node<Mission> m =
-                p.value.missions.head(); m != null; m = m.right)
+                slots[i].missions.head(); m != null; m = m.right)
             {
                 if (m.value.isCompleted())
                 {
@@ -483,18 +545,86 @@ public class WorldBuild
     {
         int count = 0;
 
-        for (FourWayLink.Node<PlanetEntry> p = planets.head(); p != null; p =
-            p.right)
+        for (int i = 0; i < slotCount; i++)
         {
-            count += p.value.missions.size();
+            count += slots[i].missions.size();
         }
 
         return count;
     }
 
-    // ----------------------------------------------------------
-    // Private helpers
-    // ----------------------------------------------------------
+    /**
+     * How far x changes moving in a direction (RIGHT is +1).
+     */
+    private static int dx(FourWayLink.Direction d)
+    {
+        switch (d)
+        {
+            case LEFT:
+                return -1;
+            case RIGHT:
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+
+    /**
+     * How far y changes moving in a direction (DOWN is +1, like rows on a
+     * screen).
+     */
+    private static int dy(FourWayLink.Direction d)
+    {
+        switch (d)
+        {
+            case UP:
+                return -1;
+            case DOWN:
+                return 1;
+            default:
+                return 0;
+        }
+    }
+
+
+    /**
+     * Finds the slot for a planet, or null if it isn't on the map.
+     */
+    private Slot findSlot(Planet planet)
+    {
+        if (planet == null)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            if (slots[i].node.value == planet)
+            {
+                return slots[i];
+            }
+        }
+
+        return null;
+    }
+
+
+    /**
+     * Finds the slot at a grid position, or null if the spot is empty.
+     */
+    private Slot findSlotAt(int x, int y)
+    {
+        for (int i = 0; i < slotCount; i++)
+        {
+            if (slots[i].x == x && slots[i].y == y)
+            {
+                return slots[i];
+            }
+        }
+
+        return null;
+    }
 
 
     /**
@@ -550,7 +680,8 @@ public class WorldBuild
 
 
     /**
-     * Adds a value to the right end of a chain.
+     * Adds a value to the right end of a chain (used for the mission lists and
+     * the event pool).
      */
     private static <T> void addToEnd(FourWayLink<T> chain, T value)
     {
@@ -572,60 +703,6 @@ public class WorldBuild
 
 
     /**
-     * Adds a planet to the world.
-     */
-    private void addPlanet(Planet planet)
-    {
-        if (planet == null || findEntry(planet) != null)
-        {
-            throw new IllegalArgumentException(
-                "Planet cannot be null or added twice.");
-        }
-
-        addToEnd(planets, new PlanetEntry(planet));
-    }
-
-
-    /**
-     * Adds a mission to a planet already in the world.
-     */
-    private void addMission(Planet planet, Mission mission)
-    {
-        PlanetEntry entry = findEntry(planet);
-
-        if (entry == null || mission == null)
-        {
-            throw new IllegalArgumentException(
-                "Mission must be non-null and go on a known planet.");
-        }
-
-        addToEnd(entry.missions, mission);
-    }
-
-
-    /**
-     * Connects two planets both ways, unless they are already connected.
-     */
-    private void connect(Planet a, Planet b)
-    {
-        PlanetEntry entryA = findEntry(a);
-        PlanetEntry entryB = findEntry(b);
-
-        if (entryA == null || entryB == null || a == b)
-        {
-            throw new IllegalArgumentException(
-                "Can only connect two different planets in the world.");
-        }
-
-        if (!isConnected(a, b))
-        {
-            addToEnd(entryA.connections, b);
-            addToEnd(entryB.connections, a);
-        }
-    }
-
-
-    /**
      * Adds an event to the pool the given number of times.
      */
     private void addEvents(Event event, int copies)
@@ -640,28 +717,5 @@ public class WorldBuild
         {
             addToEnd(eventPool, event);
         }
-    }
-
-
-    /**
-     * Finds the entry holding a planet, or null if it isn't in the world.
-     */
-    private PlanetEntry findEntry(Planet planet)
-    {
-        if (planet == null)
-        {
-            return null;
-        }
-
-        for (FourWayLink.Node<PlanetEntry> node =
-            planets.head(); node != null; node = node.right)
-        {
-            if (node.value.planet == planet)
-            {
-                return node.value;
-            }
-        }
-
-        return null;
     }
 }
