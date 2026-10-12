@@ -69,7 +69,7 @@ We plan to complete the prototype and then extend it toward the final version of
 
 1. **Implement time management.** Track the remaining Earth time and apply the planet's time-dilation factor to mission and travel time.
 2. **Implement the win/loss conditions.** Implement the return-to-Earth requirement if we keeps it, and determine what happens when time runs out or the spaceship can no longer continue.
-3. **Test and debug.** Run all tests, fix failures, and verify the complete MVP path.
+3. **Test and debug.** Run all tests, fix failures, and verify MVP works
 
 ### Stretch Goals
 
