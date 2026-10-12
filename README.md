@@ -36,7 +36,7 @@ To run the tests execute the corresponding test and download the library used in
 
 - Time and Mission Rules: The game starts with 100 hours of Earth time in the regular difficulties. Mission time costs depend on difficulty and the number of resources required.
 - Time Dilation: Planets use different time-dilation factors to represent differences between local time and Earth time.
-- Win Conditions: The player must complete every mission and return to Earth before running out of time.
+- Win Conditions: The player must complete every mission and return to Earth before running out of time instead of searching for resources.
 - Difficulty Levels: Easy, Normal, Hard, and Demo modes change gameplay. Demo mode provides additional starting time and reduces the effects of certain random events.
 - Code Responsibilities: Mission manages mission information and completion, Event handles random events and their effects, WorldBuild generates the planets and missions, and Main manages menus and gameplay.
 ### What Changed in LinkedChain?
